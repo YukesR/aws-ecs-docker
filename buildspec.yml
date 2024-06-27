@@ -1,3 +1,4 @@
+
 version: 0.2
 
 phases:
@@ -5,14 +6,27 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      
+      # Fetching secrets from Secrets Manager
+      - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id $AWS_ACCOUNT_ID --output text --query SecretString)
+      - export AWS_DEFAULT_REGION=$(aws secretsmanager get-secret-value --secret-id $AWS_DEFAULT_REGION --output text --query SecretString)
+      - export IMAGE_REPO_NAME=$(aws secretsmanager get-secret-value --secret-id $IMAGE_REPO_NAME --output text --query SecretString)
+      - export IMAGE_TAG=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG --output text --query SecretString)
+      - export CONTAINER_NAME=$(aws secretsmanager get-secret-value --secret-id $CONTAINER_NAME --output text --query SecretString)
+      
+      # Logging into ECR
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      
+      # Setting repository URI
+      - export REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
       - docker tag $REPOSITORY_URI:$IMAGE_TAG $REPOSITORY_URI:$IMAGE_TAG
+
   post_build:
     commands:
       - echo Build completed on `date`
@@ -23,4 +37,4 @@ phases:
       - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
-    files: imagedefinitions.json
+  files: imagedefinitions.json
