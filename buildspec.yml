@@ -13,7 +13,7 @@ phases:
       
       # Fetching current image version from Secrets Manager
       - |
-        export CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG')
+        CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG')
         echo "Current image version: $CURRENT_IMAGE_VERSION"
 
         # Parse the major and minor version numbers
@@ -23,18 +23,19 @@ phases:
         # Determine the next version
         if [ "$MINOR_VERSION" -lt 9 ]; then
           NEXT_MINOR_VERSION=$((MINOR_VERSION + 1))
+          NEXT_IMAGE_VERSION="${MAJOR_VERSION}.${NEXT_MINOR_VERSION}"
         else
           NEXT_MAJOR_VERSION=$((MAJOR_VERSION + 1))
           NEXT_MINOR_VERSION=0
+          NEXT_IMAGE_VERSION="${NEXT_MAJOR_VERSION}.${NEXT_MINOR_VERSION}"
         fi
-        export NEXT_IMAGE_VERSION="${NEXT_MAJOR_VERSION}.${NEXT_MINOR_VERSION}"
         echo "Next image version: $NEXT_IMAGE_VERSION"
 
         # Update image version in Secrets Manager
         aws secretsmanager put-secret-value --secret-id $IMAGE_TAG_SECRET_ID --secret-string "{\"IMAGE_TAG\": \"$NEXT_IMAGE_VERSION\"}"
 
         # Set the current image tag
-        export IMAGE_TAG=$CURRENT_IMAGE_VERSION
+        export IMAGE_TAG=$NEXT_IMAGE_VERSION
 
         # Set repository URI
         export REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
@@ -55,7 +56,7 @@ phases:
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG
 
 artifacts:
   files:
