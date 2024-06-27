@@ -5,7 +5,7 @@ phases:
     commands:
       - echo Installing jq...
       - yum install -y jq
- 
+
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -31,9 +31,6 @@ phases:
         fi
         echo "Next image version: $NEXT_IMAGE_VERSION"
 
-        # Update image version in Secrets Manager
-        aws secretsmanager put-secret-value --secret-id $IMAGE_TAG_SECRET_ID --secret-string "{\"IMAGE_TAG\": \"$NEXT_IMAGE_VERSION\"}"
-
         # Set the current image tag
         export IMAGE_TAG=$NEXT_IMAGE_VERSION
 
@@ -57,6 +54,9 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
       - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+
+      # Update image version in Secrets Manager after successful push
+      - aws secretsmanager put-secret-value --secret-id $IMAGE_TAG_SECRET_ID --secret-string "{\"IMAGE_TAG\": \"$IMAGE_TAG\"}"
 
 artifacts:
   files:
