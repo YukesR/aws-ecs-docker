@@ -14,16 +14,18 @@ phases:
         CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG')
         echo "Current image version: $CURRENT_IMAGE_VERSION"
 
+        # Parse the major and minor version numbers
         MAJOR_VERSION=$(echo $CURRENT_IMAGE_VERSION | cut -d. -f1)
         MINOR_VERSION=$(echo $CURRENT_IMAGE_VERSION | cut -d. -f2)
 
+        # Determine the next version
         if [ "$MINOR_VERSION" -lt 9 ]; then
           NEXT_MINOR_VERSION=$((MINOR_VERSION + 1))
           NEXT_IMAGE_VERSION="${MAJOR_VERSION}.${NEXT_MINOR_VERSION}"
         else
           NEXT_MAJOR_VERSION=$((MAJOR_VERSION + 1))
           NEXT_MINOR_VERSION=0
-          NEXT_IMAGE_VERSION="${NEXT_MAJOR_VERSION}.${NEXT_MINOR_VERSION}"
+          NEXT_IMAGE_VERSION="${NEXT_MAJOR_VERSION}.0"  # Reset minor version to 0 for new major version
         fi
         echo "Next image version: $NEXT_IMAGE_VERSION"
 
