@@ -13,7 +13,7 @@ phases:
       
       # Fetching current image version from Secrets Manager
       - |
-        export CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG' || echo "1.0")
+        export CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG')
         echo "Current image version: $CURRENT_IMAGE_VERSION"
 
         # Parse the major and minor version numbers
