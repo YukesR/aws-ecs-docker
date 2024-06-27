@@ -12,19 +12,20 @@ phases:
       - aws --version
       
       # Fetching current image version from Secrets Manager
-      - export CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG' || echo "1")
-      - export IMAGE_TAG=$CURRENT_IMAGE_VERSION
-      - echo "Current image version: $IMAGE_TAG"
+      - |
+        export CURRENT_IMAGE_VERSION=$(aws secretsmanager get-secret-value --secret-id $IMAGE_TAG_SECRET_ID --query "SecretString" --output text | jq -r '.IMAGE_TAG' || echo "1")
+        export IMAGE_TAG=$CURRENT_IMAGE_VERSION
+        echo "Current image version: $IMAGE_TAG"
 
-      # Update image version for next build (increment)
-      - export NEXT_IMAGE_VERSION=$(($CURRENT_IMAGE_VERSION + 1))
-      - aws secretsmanager put-secret-value --secret-id $IMAGE_TAG_SECRET_ID --secret-string "{\"IMAGE_TAG\": \"$NEXT_IMAGE_VERSION\"}"
+        # Update image version for next build (increment)
+        export NEXT_IMAGE_VERSION=$(($CURRENT_IMAGE_VERSION + 1))
+        aws secretsmanager put-secret-value --secret-id $IMAGE_TAG_SECRET_ID --secret-string "{\"IMAGE_TAG\": \"$NEXT_IMAGE_VERSION\"}"
 
-      # Set repository URI
-      - export REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+        # Set repository URI
+        export REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
 
-      # Logging into ECR
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+        # Logging into ECR
+        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   build:
     commands:
