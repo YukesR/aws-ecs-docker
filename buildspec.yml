@@ -5,7 +5,7 @@ phases:
     commands:
       - echo Installing jq...
       - yum install -y jq
-
+ 
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
