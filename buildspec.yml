@@ -6,6 +6,7 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      - aws secretsmanager get-secret-value --secret-id $SECRET_ID --query 'SecretString' --region $AWS_DEFAULT_REGION --output text | jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]' > .env
       
       # Fetching secrets from Secrets Manager
       - export AWS_ACCOUNT_ID=$(aws secretsmanager get-secret-value --secret-id $AWS_ACCOUNT_ID --output text --query SecretString)
